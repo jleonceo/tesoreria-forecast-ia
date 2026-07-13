@@ -20,7 +20,7 @@ Lo habitual para prever la caja es la media del mismo mes de otros años. Funcio
 
 ### El ejemplo
 
-Sobre una serie sintética de caja mensual, el motor se compara con ese método naïf usando *backtesting rolling-origin* (entrenar solo con el pasado de cada punto, prever, comparar con el real). El error se mide con MASE (error relativo al del naïf; por debajo de 1 es mejor que el naïf de referencia). El criterio de éxito es batir al naïf al mismo horizonte:
+Sobre una serie sintética de caja mensual, el motor se compara con ese método naïf usando *backtesting rolling-origin* (entrenar solo con el pasado de cada punto, prever, comparar con el real). El error se mide con MASE (error escalado por un naïf de referencia). Lo que importa no es un umbral fijo, sino que el MASE del modelo sea menor que el del naïf al mismo horizonte:
 
 | Horizonte | MASE del modelo | MASE del naïf | ¿Bate al naïf? |
 |---|---|---|---|
@@ -53,7 +53,6 @@ tesoreria-forecast-ia/
   ratios/      motor.py + demo.py
   aging/       motor.py + demo.py
   datos_ejemplo/   datos SINTETICOS + su generador
-  backtesting/     (el backtesting vive en forecast/modelo.py)
   caso_real.md     de donde sale esto, con un hallazgo honesto
   probar_todo.py   ejecuta todo de una vez
 ```
@@ -90,7 +89,7 @@ The usual way to forecast cash is the average of the same month in prior years. 
 
 ### The example
 
-On a synthetic monthly cash series, the engine is compared to that naive method using rolling-origin backtesting (train only on each point's past, forecast, compare to actuals). Error is measured with MASE (error relative to the naive one; below 1 beats the reference naive). Success means beating the naive at the same horizon:
+On a synthetic monthly cash series, the engine is compared to that naive method using rolling-origin backtesting (train only on each point's past, forecast, compare to actuals). Error is measured with MASE (error scaled by a reference naive). What matters is not a fixed threshold but that the model's MASE is lower than the naive's at the same horizon:
 
 | Horizon | Model MASE | Naive MASE | Beats naive? |
 |---|---|---|---|
