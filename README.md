@@ -16,7 +16,7 @@ No dependencies (standard Python only), no database, no AI, no network.
 
 Registrar lo que ya pasó es la parte fácil de la contabilidad. Lo difícil es mirar hacia delante: ¿llego a fin de mes?, ¿cubro las nóminas y el IVA del trimestre?, ¿cuándo se me tensa la caja? Este repositorio enseña a **prever la caja con criterio** y, sobre todo, a **demostrar que la previsión acierta** en vez de pedir que te fíes de ella.
 
-Lo habitual para prever la caja es la media del mismo mes de otros años. Funciona, pero no aprende ni tendencia ni estacionalidad, y casi nunca se comprueba si acierta. Aquí el motor la sustituye por una previsión por descomposición y la somete a **backtesting**: proyectar a una fecha pasada y medir el error contra lo que de verdad ocurrió.
+Lo habitual para prever la caja es la media del mismo mes de otros años. Funciona, aunque no aprende ni tendencia ni estacionalidad y casi nunca se comprueba si acierta. Aquí el motor la sustituye por una previsión por descomposición y la somete a **backtesting**: proyectar a una fecha pasada y medir el error contra lo que de verdad ocurrió.
 
 ### El ejemplo
 
@@ -63,7 +63,7 @@ Todo es sintético y reproducible (semilla fija). No hay ningún dato real ni pe
 
 ### Frontera honesta
 
-El motor **calcula** dato firme. La **lectura de negocio** (¿es sano este nivel de caja?, ¿qué hago?) es criterio, no cálculo, y no está en este repo. Y el forecast tuvo un resultado negativo que se documenta en [caso_real.md](caso_real.md): una idea que parecía buena resultó peor al medirla, y por eso no se usa.
+El motor **calcula** dato firme. La **lectura de negocio** (¿es sano este nivel de caja?, ¿qué hago?) es criterio, no cálculo. Por eso no está en este repo. Y el forecast tuvo un resultado negativo que se documenta en [caso_real.md](caso_real.md): una idea que parecía buena resultó peor al medirla, así que no se usa.
 
 ### Repos relacionados
 
@@ -85,7 +85,7 @@ Este repo es la pieza de **tesorería** de una serie sobre construir y evaluar s
 
 Recording what already happened is the easy part of accounting. The hard part is looking ahead: will I make it to month-end? can I cover payroll and quarterly VAT? when does cash get tight? This repository shows how to **forecast cash with judgement** and, above all, how to **prove the forecast works** instead of asking you to trust it.
 
-The usual way to forecast cash is the average of the same month in prior years. It works, but it learns neither trend nor seasonality, and it is rarely checked. Here the engine replaces it with a decomposition forecast and puts it through **backtesting**: project to a past date and measure the error against what actually happened.
+The usual way to forecast cash is the average of the same month in prior years. It works, though it learns neither trend nor seasonality and is rarely checked. Here the engine replaces it with a decomposition forecast and puts it through **backtesting**: project to a past date and measure the error against what actually happened.
 
 ### The example
 
@@ -120,7 +120,7 @@ Everything is synthetic and reproducible (fixed seed). There is no real or perso
 
 ### Honest boundary
 
-The engine **computes** firm figures. The **business reading** (is this cash level healthy? what should I do?) is judgement, not calculation, and is not in this repo. And the forecast had a negative result documented in [caso_real.md](caso_real.md): an idea that looked good turned out worse when measured, which is why it is not used.
+The engine **computes** firm figures. The **business reading** (is this cash level healthy? what should I do?) is judgement, not calculation. That is why it is not in this repo. And the forecast had a negative result documented in [caso_real.md](caso_real.md): an idea that looked good turned out worse when measured, which is why it is not used.
 
 ### Related repositories
 
