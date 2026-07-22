@@ -1,7 +1,7 @@
 # tesoreria-forecast-ia
 
-**Previsión de caja con criterio, y la prueba de que acierta.**
-**Cash-flow forecasting with judgement, and the proof that it works.**
+**Prever la caja de una empresa y demostrar con datos que la previsión acierta.**
+**Forecasting a company's cash and proving with data that the forecast works.**
 
 Sin dependencias (solo Python estándar), sin base de datos, sin IA, sin red.
 No dependencies (standard Python only), no database, no AI, no network.
@@ -12,30 +12,97 @@ No dependencies (standard Python only), no database, no AI, no network.
 
 ## Español
 
-### Qué resuelve
+### El problema
 
-Registrar lo que ya pasó es la parte fácil de la contabilidad. Lo difícil es mirar hacia delante: ¿llego a fin de mes?, ¿cubro las nóminas y el IVA del trimestre?, ¿cuándo se me tensa la caja? Este repositorio enseña a **prever la caja con criterio** y, sobre todo, a **demostrar que la previsión acierta** en vez de pedir que te fíes de ella.
+Es día ocho y en la cuenta corriente hay cuarenta mil euros. Las nóminas salen el treinta, y de aquí a esa fecha entrarán cobros de clientes y saldrán pagos a proveedores, el alquiler y el IVA del trimestre. La pregunta del gerente cabe en una línea: ¿llego?
 
-Lo habitual para prever la caja es la media del mismo mes de otros años. Funciona, aunque no aprende ni tendencia ni estacionalidad y casi nunca se comprueba si acierta. Aquí el motor la sustituye por una previsión por descomposición y la somete a **backtesting**: proyectar a una fecha pasada y medir el error contra lo que de verdad ocurrió.
+Casi todo el mundo la contesta igual, mirando lo que entró y salió en ese mismo mes de los años anteriores para sacar la media. El método tiene su lógica, porque un agosto se parece bastante a otro agosto, aunque arrastra dos defectos de nacimiento. El primero es que no ve que la empresa lleva tres años creciendo. El segundo es que nadie ha comprobado nunca si acierta.
+
+Del segundo defecto sale el daño de verdad. Cuando la previsión falla por veinte mil euros y nadie lo mide, la empresa decide a quién contrata, qué compra y qué aplaza sobre una cifra que suena a dato mientras es una corazonada con decimales. Este repositorio enseña a prever la caja partiendo la serie en piezas que se comportan de manera distinta, y sobre todo a examinar esa previsión contra el pasado para saber de cuánto es su error.
+
+### Qué hay dentro
+
+Un repositorio es una carpeta de trabajo publicada en internet con todo su historial de cambios. Este contiene tres motores de cálculo, sus demostraciones, unos datos inventados y el programa que los inventa.
+
+Al primero le entregas los cobros y pagos netos de cada mes pasado y te devuelve la previsión de los meses que vienen, acompañada de la nota que esa previsión saca en un examen sobre el pasado. Los otros dos miran el presente en vez del futuro: uno calcula los ratios de liquidez desde el balance y el otro ordena por antigüedad lo que está pendiente de cobro.
+
+Todo son cuentas, sin inteligencia artificial dentro, sin base de datos, sin tocar la red y sin nada que instalar, porque usa solo lo que Python trae de serie. Ante la misma entrada devuelve siempre la misma salida, propiedad que en la jerga se llama **determinista** y que aquí importa porque una previsión que cambiara de valor entre dos pasadas no se podría defender delante de un banco.
 
 ### El ejemplo
 
-Sobre una serie sintética de caja mensual, el motor se compara con ese método naïf usando *backtesting rolling-origin* (entrenar solo con el pasado de cada punto, prever, comparar con el real). El error se mide con MASE (error escalado por un naïf de referencia). Lo que importa no es un umbral fijo, sino que el MASE del modelo sea menor que el del naïf al mismo horizonte:
+Los datos son cuarenta y dos meses de caja inventados por un programa, de enero de 2023 a junio de 2026, con una semilla fija que hace que salgan idénticos en cada ejecución. Así se ve una línea, con el mes y el neto de ese mes:
 
-| Horizonte | MASE del modelo | MASE del naïf | ¿Bate al naïf? |
+```
+2026-06,153219.4
+```
+
+Sobre esas líneas el motor parte la serie en tendencia y estacionalidad, proyecta la tendencia hacia delante, le suma el índice del mes que toque y devuelve la cifra. Después vuelve atrás y repite el proceso entero desde cada punto del pasado para poder darse una nota, que es lo que aparece en pantalla al ejecutar la demostración:
+
+```
+  h=1  MASE modelo=0.255  naif=1.7288  bate_naif=True  (origenes=18)
+  h=3  MASE modelo=0.4955  naif=5.1899  bate_naif=True  (origenes=16)
+```
+
+Leído en euros, el examen a un mes de horizonte da un error medio de 4.334,19 euros para el motor y de 29.443,86 euros para el método de la media. Son dieciocho exámenes corregidos a un mes de distancia y dieciséis a tres meses, todos ellos sobre meses que el programa no había visto cuando escribió su cifra.
+
+| Horizonte | Error del motor (MASE) | Error del método habitual (MASE) | ¿Gana el motor? |
 |---|---|---|---|
-| 1 mes | 0,26 | 1,73 | sí |
-| 3 meses | 0,50 | 5,19 | sí |
+| 1 mes | 0,255 | 1,7288 | sí |
+| 3 meses | 0,4955 | 5,1899 | sí |
+| 12 meses | 1,4504 | 20,783 | sí |
 
-La cifra no es una promesa: sale de ejecutar el backtesting, y es reproducible con `python probar_todo.py`.
+### Los conceptos
 
-### Cómo funciona
+**Descomponer** una serie consiste en partirla en piezas que se comportan de manera distinta, predecir cada una por separado y sumarlas al final. Aquí las piezas son tres. La **tendencia** es hacia dónde va el nivel a largo plazo, que en estos datos sube alrededor de mil quinientos euros al mes. La **estacionalidad** es lo que cada mes del calendario se aparta de ese nivel por costumbre del negocio, siempre en el mismo sentido, con agosto por debajo y noviembre por encima. Lo que queda después de quitar las dos es **ruido**, que no se predice porque carece de forma.
 
-Tres piezas, todas de cálculo determinista (la aritmética siempre da lo mismo, sin depender de ningún modelo de IA):
+Las dos primeras se estiman a la vez, alternando entre ellas hasta que dejan de moverse, técnica que en la jerga se llama **backfitting** iterativo. Tanto cuidado tiene su razón: si calculas la tendencia sin descontar antes el vaivén de los meses, un verano flojo se cuela dentro de ella y acabas prediciendo un declive inexistente.
 
-- **forecast:** previsión del neto mensual por descomposición en tendencia y estacionalidad (*backfitting* iterativo, para que la estacionalidad no se filtre a la tendencia), con amortiguamiento para que la tendencia no extrapole sin freno. Trae su propio backtesting y un naïf de referencia como competidor.
-- **ratios:** liquidez y solvencia desde el balance (ratio corriente, prueba ácida, caja, fondo de maniobra, endeudamiento, autonomía financiera). La aritmética es trivial; el trabajo real es el **mapeo al PGC español por prefijo y por signo**: un cliente con saldo acreedor es un anticipo (pasivo), no un cobro pendiente. Autocontrol: si el balance no cierra, no se publican ratios.
-- **aging:** antigüedad de cobros y pagos por tramos, DSO/DPO, y un control de honestidad poco habitual: el aging por factura solo es firme si los cobros enlazan a su factura; si no, el veredicto baja a "indicativo" en vez de fingir tramos exactos. Un vencimiento vacío no es "al corriente": es "sin vencimiento".
+El **método ingenuo**, que la literatura llama *naïf*, es el del apartado anterior: la media de ese mismo mes en los años anteriores. Está programado dentro del repositorio tal cual se usa en las empresas, sin caricaturizarlo para que pierda, porque ganarle a un rival de paja no demuestra nada.
+
+**Backtesting** es probar la previsión contra un pasado que ya se conoce, y en esa idea se apoya todo lo demás. Suena a examen con las respuestas delante, así que lo que importa es cómo se tapan. Para juzgar la previsión de mayo de 2025 al programa solo se le deja leer lo anterior a mayo de 2025; entrega su cifra, se destapa el mes real y se anota la diferencia en euros. Después se avanza un mes y se repite el ejercicio con el siguiente, forma de mover el punto de corte que recibe el nombre de **rolling-origin**. Lo que se gana con eso es tiempo, porque para corregir una previsión sobre el mes que viene hay que esperar treinta días, mientras que sobre tres años de historia hay hoy mismo dieciocho exámenes corregidos.
+
+Los errores salen en euros, y cinco mil euros de fallo significan cosas distintas en una empresa que mueve veinte mil al mes y en otra que mueve dos millones. Para poder compararlos se divide el error entre una vara de medir sacada de la propia serie, y el resultado se llama **MASE**. Cuanto más bajo, mejor. El listón está escrito dentro del código: la previsión vale si su MASE es menor que el del método ingenuo al mismo horizonte, porque bajar de un número redondo elegido a conveniencia no cuenta como aprobado.
+
+### Los otros dos motores
+
+El de **ratios** reparte cada cuenta del balance en su masa y calcula liquidez y solvencia, es decir, ratio corriente, prueba ácida, ratio de caja, fondo de maniobra, endeudamiento y autonomía financiera. La aritmética es trivial y el trabajo real está en el reparto, que se hace por el prefijo de la cuenta en el plan contable español y por el signo del saldo. La cuenta `43000011` es de clientes y tiene saldo de menos trece mil novecientos cuarenta y cinco euros, señal de que ese cliente pagó por adelantado, de modo que la empresa le debe una entrega en vez de tener con él un cobro pendiente. Si el balance no cuadra, el programa se niega a publicar ratios.
+
+El de **aging** ordena por antigüedad lo que está pendiente de cobro y de pago, repartido en tramos: lo que aún no ha vencido, lo vencido hace menos de un mes, entre uno y dos meses, y así hasta el cajón de lo que lleva más de ciento veinte días. Calcula además el **DSO** y el **DPO**, que son los días medios que se tarda en cobrar a los clientes y en pagar a los proveedores. Hay un cajón que casi nadie pone, porque una factura sin fecha de vencimiento apuntada va a `SIN_VENCIMIENTO`, ya que desconocer cuándo vence algo es cosa distinta de saber que aún no vence. Y el veredicto del reparto baja a la categoría de indicativo cuando los cobros no enlazan con su factura, en vez de fingir tramos exactos.
+
+### Qué está medido
+
+Cifras obtenidas ejecutando el repositorio el 22/07/2026 con Python 3.14.6:
+
+| Comprobación | Resultado |
+|---|---|
+| `probar_todo.py` | los tres programas de muestra en verde, sin instalar nada |
+| Serie generada | 42 meses, de enero de 2023 a junio de 2026, semilla 20260713 |
+| Previsión a 1 mes, 18 exámenes | MASE 0,255 del motor contra 1,7288 del método ingenuo |
+| Previsión a 3 meses, 16 exámenes | MASE 0,4955 contra 5,1899 |
+| Error medio a 1 mes, en euros | 4.334,19 del motor contra 29.443,86 del método ingenuo |
+| Últimos seis exámenes | el motor gana los seis |
+| Balance | cuadra a 0,00; ratio corriente 1,935 y prueba ácida 1,1749 |
+| Aging | 7 facturas, 40.000,00 abiertos, 22.000,00 vencidos, DSO 60,8 días |
+
+### Lo que no sale tan bien como parece
+
+Conviene empezar por la victoria, que resulta más pequeña de lo que aparenta. El método ingenuo pierde por veintinueve mil euros de media. La diferencia tiene una causa medible: al promediar el mismo mes de años anteriores, sus datos están veinte meses por detrás del presente, y a mil quinientos euros de crecimiento mensual eso son treinta mil euros de retraso estructural. Entre 29.443,86 y esos treinta mil no queda mucho margen para otra explicación. El motor gana sobre todo porque el rival no puede ver una subida que estos datos llevan sembrada desde el origen.
+
+La segunda cosa la reconoce el propio repositorio en el fichero que gobierna sus pruebas automáticas, donde queda escrito que una auditoría interna encontró que la suite no detecta ciertos fallos. Se comprueba estropeando el código a propósito, técnica que se llama prueba de mutación y que consiste en meter un error conocido para ver si alguna comprobación se pone roja. Al sustituir por un uno fijo la vara de medir del MASE, las cifras se disparan a 4.334 y 29.443 sin que el veredicto deje de salir verde; al dejar que el examen mire los meses que tenía que adivinar, ocurre lo mismo. La causa es idéntica en los dos casos, porque el veredicto compara el motor con el método ingenuo, así que todo aquello que afecte a los dos por igual pasa desapercibido.
+
+La tercera nació en este mismo README, que hasta hoy prometía amortiguar la tendencia para que no se dispare al alejarse el horizonte. Ese freno existe programado en `forecast/modelo.py`, con un factor que multiplica el avance de la tendencia en cada paso hacia delante, y viene fijado en 1,0, valor que lo deja inactivo. Ni la demostración ni `probar_todo.py` pasan otro valor, de manera que el repositorio nunca ha amortiguado nada. Al activarlo con 0,9 la previsión a tres meses empeora de 0,4955 a 0,5168 y la de doce meses pasa de 1,4504 a 3,7361, así que la frase que aquí se prometía describía una pieza apagada que además empeoraría el resultado.
+
+La cuarta no la enseña el repositorio en ningún sitio. Estirando el horizonte a doce meses, el MASE del motor sube a 1,4504, casi seis veces peor que a un mes, aunque el método ingenuo a esa distancia se va hasta 20,783.
+
+### Cuándo no sirve
+
+El límite mayor está en los datos, y el propio generador lo deja a la vista. La serie se fabrica sumando una subida recta, unos índices de mes fijos y un ruido moderado, que es exactamente la receta que el modelo supone. Medir así demuestra que la maquinaria funciona cuando la realidad se porta, sin decir nada de un año con un cliente que se marcha o una obra que se retrasa.
+
+Hacen falta además dos años de historia mensual antes de la primera previsión, y buena parte de las empresas pequeñas no los tienen apuntados con esa limpieza.
+
+Del lado del aging conviene mirar la letra pequeña. Dos parejas de cifras escritas a mano dentro del código enseñan cómo funciona el control que decide si los tramos son de fiar, y el DSO de sesenta coma ocho días sale de suponer doscientos cuarenta mil euros de ventas anuales, escritos también a mano. Ilustran el mecanismo sin medir esta cartera.
+
+El repositorio guarda por último un resultado negativo propio en [caso_real.md](caso_real.md). Se probó a meter en la previsión los vencimientos ya facturados, que parecen dato firme, y la medición dijo que empeoraba. Las cifras que allí se citan salieron de la contabilidad del sistema del que nace este repositorio, de modo que no se pueden reproducir con estos datos inventados.
 
 ### Pruébalo
 
@@ -43,7 +110,7 @@ Tres piezas, todas de cálculo determinista (la aritmética siempre da lo mismo,
 python probar_todo.py
 ```
 
-Genera los datos sintéticos y ejecuta las tres demos. No hace falta instalar nada.
+Genera los datos sintéticos y ejecuta las tres demostraciones en un par de segundos. No hace falta instalar nada.
 
 ### Estructura
 
@@ -59,11 +126,11 @@ tesoreria-forecast-ia/
 
 ### Datos y privacidad
 
-Todo es sintético y reproducible (semilla fija). No hay ningún dato real ni personal.
+Todo es sintético y reproducible con semilla fija. No hay ningún dato real ni personal.
 
 ### Frontera honesta
 
-El motor **calcula** dato firme. La **lectura de negocio** (¿es sano este nivel de caja?, ¿qué hago?) es criterio, no cálculo. Por eso no está en este repo. Y el forecast tuvo un resultado negativo que se documenta en [caso_real.md](caso_real.md): una idea que parecía buena resultó peor al medirla, así que no se usa.
+El motor calcula dato firme. La lectura de negocio, es decir, si ese nivel de caja es sano y qué conviene hacer con él, corresponde al criterio de una persona y por eso queda fuera de este repositorio.
 
 ### Repos relacionados
 
@@ -72,6 +139,7 @@ Este repo es la pieza de **tesorería** de una serie sobre construir y evaluar s
 - [tu-primer-asistente-ia-web](https://github.com/jleonceo/tu-primer-asistente-ia-web): qué es un asistente de IA, para quien empieza de cero.
 - [llm-eval-contable](https://github.com/jleonceo/llm-eval-contable): evaluar una skill como se examina a un alumno.
 - [accounting-agent-swarm](https://github.com/jleonceo/accounting-agent-swarm): el enjambre de agentes contables de principio a fin.
+- [control-interno-fraude-ia](https://github.com/jleonceo/control-interno-fraude-ia): buscar fraude en el libro contable con pura aritmética.
 - [orquestacion-enjambres-ia](https://github.com/jleonceo/orquestacion-enjambres-ia): el enrutado multi-agente.
 - [gobernanza-skills-analiticas](https://github.com/jleonceo/gobernanza-skills-analiticas): las reglas para gobernar skills.
 - [verificacion-determinista-ia](https://github.com/jleonceo/verificacion-determinista-ia): comprobar la coherencia del estado sin IA.
@@ -81,30 +149,97 @@ Este repo es la pieza de **tesorería** de una serie sobre construir y evaluar s
 
 ## English
 
-### What it solves
+### The problem
 
-Recording what already happened is the easy part of accounting. The hard part is looking ahead: will I make it to month-end? can I cover payroll and quarterly VAT? when does cash get tight? This repository shows how to **forecast cash with judgement** and, above all, how to **prove the forecast works** instead of asking you to trust it.
+It is the eighth of the month and there are forty thousand euros in the current account. Payroll goes out on the thirtieth, and between now and then customer payments will come in while supplier payments, rent and the quarterly VAT go out. The manager's question fits in one line: will I make it?
 
-The usual way to forecast cash is the average of the same month in prior years. It works, though it learns neither trend nor seasonality and is rarely checked. Here the engine replaces it with a decomposition forecast and puts it through **backtesting**: project to a past date and measure the error against what actually happened.
+Almost everyone answers it the same way, looking at what came in and went out that same month in previous years and taking the average. The method has its logic, because one August resembles another August fairly well, although it carries two birth defects. The first is that it cannot see the company has been growing for three years. The second is that nobody has ever checked whether it is right.
+
+The real damage comes from that second defect. When the forecast is off by twenty thousand euros and nobody measures it, the company decides who to hire, what to buy and what to postpone on a figure that sounds like data while being a hunch with decimals. This repository shows how to forecast cash by splitting the series into pieces that behave differently, and above all how to examine that forecast against the past to learn the size of its error.
+
+### What is inside
+
+A repository is a working folder published on the internet together with its full history of changes. This one holds three calculation engines, their demonstrations, some invented data and the program that invents it.
+
+You hand the first engine the net collections and payments of every past month and it returns the forecast for the months ahead, along with the mark that forecast earned in an examination on the past. The other two look at the present instead of the future: one computes liquidity ratios from the balance sheet and the other sorts by age whatever is still awaiting collection.
+
+It is all arithmetic, with no artificial intelligence inside, no database, no network access and nothing to install, because it uses only what Python ships with. Given the same input it always returns the same output, a property known in the jargon as **deterministic**. That matters here because a forecast changing value between two runs could not be defended in front of a bank.
 
 ### The example
 
-On a synthetic monthly cash series, the engine is compared to that naive method using rolling-origin backtesting (train only on each point's past, forecast, compare to actuals). Error is measured with MASE (error scaled by a reference naive). What matters is not a fixed threshold but that the model's MASE is lower than the naive's at the same horizon:
+The data is forty-two months of cash invented by a program, from January 2023 to June 2026, with a fixed seed that makes it come out identical on every run. This is what one line looks like, with the month and the net figure for that month:
 
-| Horizon | Model MASE | Naive MASE | Beats naive? |
+```
+2026-06,153219.4
+```
+
+Over those lines the engine splits the series into trend and seasonality, projects the trend forward, adds the index of the relevant month and returns the figure. It then goes back and repeats the whole process from every point in the past so it can give itself a mark, which is what appears on screen when the demonstration is executed:
+
+```
+  h=1  MASE modelo=0.255  naif=1.7288  bate_naif=True  (origenes=18)
+  h=3  MASE modelo=0.4955  naif=5.1899  bate_naif=True  (origenes=16)
+```
+
+Read in euros, the one-month examination gives a mean error of 4,334.19 euros for the engine and 29,443.86 euros for the averaging method. That is eighteen corrected examinations at one month of distance and sixteen at three months, all of them on months the program had not seen when it wrote its figure.
+
+| Horizon | Engine error (MASE) | Usual method error (MASE) | Does the engine win? |
 |---|---|---|---|
-| 1 month | 0.26 | 1.73 | yes |
-| 3 months | 0.50 | 5.19 | yes |
+| 1 month | 0.255 | 1.7288 | yes |
+| 3 months | 0.4955 | 5.1899 | yes |
+| 12 months | 1.4504 | 20.783 | yes |
 
-The figure is not a promise: it comes from running the backtest, reproducible with `python probar_todo.py`.
+### The concepts
 
-### How it works
+To **decompose** a series means splitting it into pieces that behave differently, predicting each one separately and adding them up at the end. Here there are three pieces. The **trend** is where the level is heading in the long run, which in this data climbs by around one thousand five hundred euros a month. **Seasonality** is how much each calendar month departs from that level out of business habit, always in the same direction, with August below and November above. What is left after removing both is **noise**, which cannot be predicted because it has no shape.
 
-Three pieces, all deterministic (the arithmetic always returns the same, with no dependence on any AI model):
+The first two are estimated at the same time, alternating between them until they stop moving, a technique known in the jargon as iterative **backfitting**. So much care has its reason: if you compute the trend without first discounting the monthly swing, a weak summer creeps inside it and you end up predicting a decline that does not exist.
 
-- **forecast:** monthly net forecast by decomposition into trend and seasonality (iterative backfitting, so seasonality does not leak into the trend), with damping so the trend does not extrapolate unchecked. It ships its own backtesting and a naive baseline as competitor.
-- **ratios:** liquidity and solvency from the balance sheet (current, quick, cash, working capital, leverage, financial autonomy). The arithmetic is trivial; the real work is the **mapping to the Spanish chart of accounts by prefix and sign**: a customer with a credit balance is an advance (a liability), not a receivable. Self-check: if the balance sheet does not tie out, no ratios are published.
-- **aging:** receivables/payables aging by bucket, DSO/DPO, and an unusual honesty control: invoice-level aging is only firm if payments link to their invoice; otherwise the verdict drops to "indicative" instead of faking exact buckets. A missing due date is not "current": it is "no due date".
+The **naive method**, called *naïf* in the literature, is the one from the first section: the average of that same month in previous years. It is programmed inside the repository exactly as companies use it, without being caricatured so that it loses, because beating a straw rival demonstrates nothing.
+
+**Backtesting** means testing the forecast against a past you already know, and everything else here rests on that idea. It sounds like an examination with the answers in plain sight, so what matters is how they are covered up. To judge the forecast for May 2025 the program is only allowed to read what came before May 2025; it delivers its figure, the real month is uncovered and the difference in euros is recorded. The cut-off then advances one month and the exercise is repeated with the next one, a way of moving that cut-off which goes by the name of **rolling-origin**. What this buys is time, because correcting a forecast about next month takes thirty days of waiting, whereas three years of history offer eighteen corrected examinations today.
+
+The errors come out in euros, and five thousand euros of error mean different things in a company that moves twenty thousand a month and in one that moves two million. To make them comparable, the error is divided by a yardstick taken from the series itself, and the result is called **MASE**. The lower, the better. The bar is written inside the code: the forecast is valid when its MASE is lower than the naive method's at the same horizon, because dropping below a round number chosen for convenience does not count as a pass.
+
+### The other two engines
+
+The **ratios** engine assigns every balance-sheet account to its block and computes liquidity and solvency, that is, current ratio, quick ratio, cash ratio, working capital, leverage and financial autonomy. The arithmetic is trivial and the real work sits in the assignment, done by the account prefix in the Spanish chart of accounts and by the sign of the balance. Account `43000011` is a customer account holding a balance of minus thirteen thousand nine hundred and forty-five euros, a sign that this customer paid in advance, so the company owes them a delivery rather than holding a receivable. If the balance sheet does not tie out, the program refuses to publish ratios.
+
+The **aging** engine sorts by age whatever is awaiting collection and payment, spread across buckets: not yet due, overdue by less than a month, between one and two months, and so on up to the drawer holding anything past one hundred and twenty days. It also computes **DSO** and **DPO**, the average number of days taken to collect from customers and to pay suppliers. There is one drawer almost nobody adds, because an invoice with no due date recorded goes to `SIN_VENCIMIENTO`, given that not knowing when something falls due is a different matter from knowing it is not due yet. And the verdict on the buckets drops to the indicative category when payments do not link to their invoice, rather than faking exact buckets.
+
+### What has been measured
+
+Figures obtained by executing the repository on 22/07/2026 with Python 3.14.6:
+
+| Check | Result |
+|---|---|
+| `probar_todo.py` | the three sample programs green, with nothing to install |
+| Generated series | 42 months, January 2023 to June 2026, seed 20260713 |
+| One-month forecast, 18 examinations | MASE 0.255 for the engine against 1.7288 for the naive method |
+| Three-month forecast, 16 examinations | MASE 0.4955 against 5.1899 |
+| Mean one-month error, in euros | 4,334.19 for the engine against 29,443.86 for the naive method |
+| Last six examinations | the engine wins all six |
+| Balance sheet | ties out to 0.00; current ratio 1.935 and quick ratio 1.1749 |
+| Aging | 7 invoices, 40,000.00 open, 22,000.00 overdue, DSO 60.8 days |
+
+### What does not hold up as well as it looks
+
+It is worth starting with the victory, which turns out smaller than it appears. The naive method loses by twenty-nine thousand euros on average. The gap has a measurable cause: by averaging the same month of previous years, its data sits twenty months behind the present, and at one thousand five hundred euros of monthly growth that amounts to thirty thousand euros of structural lag. Between 29,443.86 and those thirty thousand there is little room left for another explanation. The engine wins mostly because its rival cannot see a climb that this data has carried since its origin.
+
+The second point is admitted by the repository itself in the file that governs its automated tests, where it is written that an internal audit found the suite fails to detect certain faults. This is checked by damaging the code on purpose, a technique called mutation testing that consists of injecting a known error to see whether any check turns red. Replacing the MASE yardstick with a fixed one sends the figures up to 4,334 and 29,443 while the verdict keeps coming out green; letting the examination look at the months it was supposed to guess produces the same outcome. The cause is identical in both cases, because the verdict compares the engine against the naive method, so anything that affects both equally goes unnoticed.
+
+The third point was born in this very README, which until today promised to damp the trend so it would not run away as the horizon lengthens. That brake does exist in `forecast/modelo.py`, as a factor multiplying the trend advance at each step forward. The factor ships set to 1.0, a value that leaves it inactive. Neither the demonstration nor `probar_todo.py` passes any other value, so the repository has never damped anything. Turning it on at 0.9 worsens the three-month forecast from 0.4955 to 0.5168 and the twelve-month one from 1.4504 to 3.7361, so the sentence promised here described a part that was switched off and would also make the result worse.
+
+The fourth point is shown nowhere in the repository. Stretching the horizon to twelve months, the engine's MASE climbs to 1.4504, almost six times worse than at one month, although the naive method at that distance goes all the way to 20.783.
+
+### When it does not work
+
+The biggest limit sits in the data, and the generator itself leaves it in plain view. The series is built by adding a straight climb, some fixed monthly indices and moderate noise, which is exactly the recipe the model assumes. Measuring this way demonstrates that the machinery works when reality behaves, while saying nothing about a year with a customer who leaves or a project that slips.
+
+Two years of monthly history are also required before the first forecast, and a good share of small companies do not have them recorded that cleanly.
+
+On the aging side the small print is worth reading. Two pairs of figures hard-coded inside the program show how the control that decides whether the buckets are trustworthy behaves, and the DSO of sixty point eight days comes from assuming two hundred and forty thousand euros of annual sales, also hard-coded. They illustrate the mechanism without measuring this portfolio.
+
+The repository lastly keeps a negative result of its own in [caso_real.md](caso_real.md). Feeding the already invoiced due dates into the forecast was tried, since they look like firm data, and the measurement said it made things worse. The figures quoted there came from the accounting of the system this repository grew out of, so they cannot be reproduced with this invented data.
 
 ### Try it
 
@@ -112,15 +247,27 @@ Three pieces, all deterministic (the arithmetic always returns the same, with no
 python probar_todo.py
 ```
 
-It generates the synthetic data and runs the three demos. Nothing to install.
+It generates the synthetic data and runs the three demonstrations in a couple of seconds. Nothing to install.
+
+### Structure
+
+```
+tesoreria-forecast-ia/
+  forecast/    modelo.py (pure engine) + demo.py
+  ratios/      motor.py + demo.py
+  aging/       motor.py + demo.py
+  datos_ejemplo/   SYNTHETIC data + its generator
+  caso_real.md     where this comes from, with an honest finding
+  probar_todo.py   runs everything at once
+```
 
 ### Data and privacy
 
-Everything is synthetic and reproducible (fixed seed). There is no real or personal data.
+Everything is synthetic and reproducible with a fixed seed. There is no real or personal data.
 
 ### Honest boundary
 
-The engine **computes** firm figures. The **business reading** (is this cash level healthy? what should I do?) is judgement, not calculation. That is why it is not in this repo. And the forecast had a negative result documented in [caso_real.md](caso_real.md): an idea that looked good turned out worse when measured, which is why it is not used.
+The engine computes firm figures. The business reading, that is, whether this cash level is healthy and what should be done about it, belongs to a person's judgement and for that reason stays outside this repository.
 
 ### Related repositories
 
@@ -129,6 +276,7 @@ This repo is the **treasury** piece of a series on building and evaluating AI sy
 - [tu-primer-asistente-ia-web](https://github.com/jleonceo/tu-primer-asistente-ia-web): what an AI assistant is, for absolute beginners.
 - [llm-eval-contable](https://github.com/jleonceo/llm-eval-contable): evaluating a skill the way you examine a student.
 - [accounting-agent-swarm](https://github.com/jleonceo/accounting-agent-swarm): the accounting agent swarm end to end.
+- [control-interno-fraude-ia](https://github.com/jleonceo/control-interno-fraude-ia): hunting fraud in the ledger with pure arithmetic.
 - [orquestacion-enjambres-ia](https://github.com/jleonceo/orquestacion-enjambres-ia): multi-agent routing.
 - [gobernanza-skills-analiticas](https://github.com/jleonceo/gobernanza-skills-analiticas): the rules for governing skills.
 - [verificacion-determinista-ia](https://github.com/jleonceo/verificacion-determinista-ia): checking state coherence without AI.
