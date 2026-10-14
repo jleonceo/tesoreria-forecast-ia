@@ -1,6 +1,6 @@
 English version: [README.en.md](README.en.md)
 
-# Previsión de tesorería · caja, liquidez y antigüedad de saldos
+# Previsión de tesorería
 
 Prevé la caja de los próximos meses y mide, contra el pasado, cuánto se equivoca esa previsión. Incluye
 también los ratios de liquidez del balance y la antigüedad de lo pendiente de cobro y de pago.
@@ -17,7 +17,7 @@ tres demostraciones en un par de segundos.
 
 ## El problema de partida
 
-Muchas empresas prevén la caja de un mes con la media de ese mismo mes en los años anteriores, y casi nunca
+Muchas empresas prevén la caja de un mes con la media de ese mismo mes en los años anteriores. Casi nunca
 comprueban cuánto falla. Si la empresa crece, esa media va por detrás del presente. Las decisiones de compras,
 contratación o aplazamientos se toman entonces sobre una cifra con error desconocido.
 

@@ -1,6 +1,6 @@
 Versión en español: [README.md](README.md)
 
-# Cash forecasting · cash, liquidity and ageing
+# Cash forecasting
 
 It forecasts cash for the coming months and measures, against the past, how far that forecast is off. It also
 computes balance-sheet liquidity ratios and the ageing of receivables and payables.
@@ -17,7 +17,7 @@ three demonstrations in a couple of seconds.
 
 ## The starting problem
 
-Many companies forecast a month's cash with the average of that same month in previous years, and rarely check
+Many companies forecast a month's cash with the average of that same month in previous years. They rarely check
 how far it is off. If the company is growing, that average lags behind the present. Purchasing, hiring and
 payment decisions are then made on a figure with an unknown error.
 
