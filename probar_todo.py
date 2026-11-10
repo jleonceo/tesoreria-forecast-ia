@@ -17,17 +17,17 @@ PY = sys.executable
 def paso(titulo, *args):
     print("\n" + "=" * 70)
     print(titulo)
-    print("=" * 70)
+    print("=" * 70, flush=True)   # sin flush el titulo sale despues de la salida del paso
     r = subprocess.run([PY, *[str(a) for a in args]], cwd=str(RAIZ))
     return r.returncode
 
 
 def main():
     fallos = 0
-    paso("1/4 · Generar la serie de caja sintetica", RAIZ / "datos_ejemplo" / "generar_serie.py")
-    fallos += paso("2/4 · Forecast de caja (bate al naif, backtesting)", RAIZ / "forecast" / "demo.py")
-    fallos += paso("3/4 · Ratios de salud financiera", RAIZ / "ratios" / "demo.py")
-    fallos += paso("4/4 · Aging de cobros y pagos", RAIZ / "aging" / "demo.py")
+    paso("1/4 - Generar la serie de caja sintetica", RAIZ / "datos_ejemplo" / "generar_serie.py")
+    fallos += paso("2/4 - Forecast de caja (dos referencias, backtesting)", RAIZ / "forecast" / "demo.py")
+    fallos += paso("3/4 - Ratios de salud financiera", RAIZ / "ratios" / "demo.py")
+    fallos += paso("4/4 - Aging de cobros y pagos", RAIZ / "aging" / "demo.py")
     print("\n" + "=" * 70)
     print("TODO VERDE" if fallos == 0 else f"HAY {fallos} DEMO(S) EN ROJO")
     print("=" * 70)

@@ -5,8 +5,11 @@ English version: [README.en.md](README.en.md)
 Prevé la caja de los próximos meses y mide, contra el pasado, cuánto se equivoca esa previsión. Incluye
 también los ratios de liquidez del balance y la antigüedad de lo pendiente de cobro y de pago.
 
-**Resultado:** a un mes vista, la previsión se equivoca de media en 4.334 €. El método habitual, la media del
-mismo mes en años anteriores, se equivoca en 29.444 €. Son 18 meses previstos sin ver el dato real.
+**Resultado:** a un mes vista, la previsión se equivoca de media en 4.334 €, en 18 meses previstos sin ver el
+dato real. El mismo mes del año anterior más la tendencia se equivoca en 5.082 €. El método habitual, la media
+del mismo mes en años anteriores, en 29.444 €.
+
+[![ci](https://github.com/jleonceo/tesoreria-forecast-ia/actions/workflows/ci.yml/badge.svg)](https://github.com/jleonceo/tesoreria-forecast-ia/actions/workflows/ci.yml)
 
 ```bash
 python probar_todo.py
@@ -24,8 +27,8 @@ contratación o aplazamientos se toman entonces sobre una cifra con error descon
 ## Qué hay dentro
 
 1. `forecast/` separa la serie mensual de caja en tendencia y estacionalidad, prevé los meses siguientes y se
-   examina contra el pasado: para cada mes ya conocido, prevé usando solo los meses anteriores y anota el
-   error.
+   examina contra el pasado: para cada mes ya conocido, prevé usando solo los meses anteriores, anota el
+   error y lo compara con el de dos métodos sencillos.
 2. `ratios/` clasifica las cuentas del balance según el Plan General Contable y calcula ratio corriente,
    prueba ácida, ratio de caja, fondo de maniobra, endeudamiento y autonomía financiera. Si el balance no
    cuadra, no publica ratios.
@@ -36,9 +39,20 @@ contratación o aplazamientos se toman entonces sobre una cifra con error descon
 
 ## Lo que sale
 
-- **Previsión, a 1 mes:** error medio de 4.334 € frente a 29.444 € del método habitual, en 18 meses.
-- **Previsión, a 3 meses:** 8.374 € frente a 87.797 €, en 16 meses.
-- **Últimos seis meses examinados:** la previsión gana en los seis.
+La previsión se compara con dos métodos sencillos. El método habitual es la media del mismo mes en años
+anteriores. El exigente toma el mismo mes del año anterior y le suma la tendencia de los dos últimos años.
+
+| Horizonte | Previsión | Mismo mes más tendencia | Método habitual | Previsiones examinadas |
+|---|---|---|---|---|
+| 1 mes | 4.334 € | 5.082 € | 29.444 € | 18 |
+| 3 meses | 8.374 € | 9.335 € | 87.797 € | 16 |
+| 12 meses | 23.985 € | 18.617 € | 346.619 € | 7 |
+
+A tres y a doce meses, el error es el de la suma de los meses del horizonte. A uno y a tres meses la previsión
+gana a los dos métodos. A doce meses pierde frente al mismo mes más la tendencia.
+
+- **Últimos seis meses examinados:** la previsión gana al método habitual en los seis y al mismo mes más la
+  tendencia en dos.
 - **Balance de ejemplo:** cuadra a 0,00; ratio corriente 1,94 y prueba ácida 1,17.
 - **Facturas abiertas:** 40.000 €, de los que 22.000 € están vencidos; DSO de 60,8 días.
 
@@ -50,14 +64,13 @@ típica de la propia serie: 0,26 la previsión y 1,73 el método habitual, a un 
 - Los datos son sintéticos y se generaron con la misma forma que supone el modelo: una subida constante, el
   mismo patrón cada mes del año y un ruido moderado. Demuestra que el cálculo funciona, no que acierte con una
   empresa real que pierde un cliente o retrasa una obra.
-- Buena parte de la ventaja sale de que la serie crece unos 1.500 € al mes y el método habitual no ve ese
-  crecimiento. En una empresa estable la diferencia sería menor.
-- A 12 meses la previsión empeora mucho: 23.985 € de error medio, aunque sigue por debajo de los 346.619 € del
-  método habitual.
+- La mayor parte de la ventaja frente al método habitual sale de que la serie crece unos 1.500 € al mes y ese
+  método no lo ve. Frente al mismo mes más la tendencia, la mejora a un mes es de 748 €.
+- La cifra a 12 meses sale de solo siete previsiones.
 - Hacen falta dos años de historia mensual antes de la primera previsión.
 - El DSO de ejemplo supone unas ventas anuales de 240.000 € fijadas en el código.
-- Las pruebas automáticas comparan la previsión con el método habitual; un fallo que afecte a los dos por igual
-  no lo detectan.
+- Las pruebas automáticas rehacen por otro camino el backtesting, la escala del error y los ratios. Se comprobó que
+  fallan metiendo doce errores a propósito, uno cada vez. No dicen si otro modelo acertaría más.
 - [caso_real.md](caso_real.md) recoge una prueba con datos reales que salió mal: añadir los vencimientos ya
   facturados empeoró la previsión. Esas cifras no se pueden reproducir con los datos de ejemplo.
 

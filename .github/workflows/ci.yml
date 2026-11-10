@@ -6,11 +6,13 @@ name: ci
 # La suite se verifico en verde en local antes de cablear esto. Las versiones de la
 # matriz no se probaron en local.
 #
-# Nota honesta sobre el alcance: `probar_todo.py` cubre el motor (descomposicion,
-# backtesting, ratios, aging). Una auditoria del 20/07 midio que la suite NO detecta
-# ciertas regresiones — sobreviven mutantes que rompen la escala del MASE o inyectan
-# fuga temporal en el backtesting. Este CI evita que se rompa lo que la suite SI mira;
-# no certifica lo que la suite no cubre.
+# Alcance: `probar_todo.py` cubre el motor (descomposicion, backtesting con dos
+# referencias, ratios, aging). Desde el 10/11/2026 sus controles caen si se rompe la
+# escala del MASE, si el backtesting mira el futuro, si a h>1 no se mide la suma del
+# horizonte, si falla la referencia con tendencia o si un ratio se calcula mal: se
+# comprobo metiendo doce errores a proposito, uno por copia, y los doce se detectaron.
+# El segundo paso ejecuta con una consola que solo admite ASCII, como la de Windows
+# en algunos equipos.
 
 on:
   push:
@@ -31,4 +33,9 @@ jobs:
 
       # Biblioteca estandar unicamente.
       - name: Suite completa (forecast + backtesting + ratios + aging)
-        run: python probar_todo.py
+        run: python -W error probar_todo.py
+
+      - name: La misma suite con consola ASCII
+        env:
+          PYTHONIOENCODING: ascii
+        run: python -W error probar_todo.py

@@ -41,7 +41,20 @@ def controles():
     r0 = motor.calcular_ratios({"TESORERIA": 100.0})
     if r0["ratio_corriente"] is not None:
         print(f"  [FALLO] PC=0 deberia dar None, got {r0['ratio_corriente']}"); ok = False
-    print("  [OK] controles de clasificacion y division por cero." if ok else "  [FALLO] controles.")
+    # Ratios a mano sobre masas pequeñas: AC = 40+60+50 = 150, PC = 45+20 = 65, ANC = 80, PNC = 30,
+    # PN = 60 de capital + 75 de resultado = 135; activo 230 = exigible 95 + PN 135.
+    r = motor.calcular_ratios({"TESORERIA": 40.0, "EXISTENCIAS": 60.0, "CLIENTES": 50.0,
+                               "PROVEEDORES": -45.0, "HP_ACREEDORA": -20.0, "ANC": 80.0,
+                               "PNC": -30.0, "PN": -60.0, "PYG": -75.0})
+    esperado = {"fondo_maniobra": 85.0, "ratio_corriente": round(150 / 65, 4),
+                "ratio_acida_quick": round(90 / 65, 4), "ratio_caja": round(40 / 65, 4),
+                "ratio_endeudamiento": round(95 / 230, 4), "autonomia_financiera": round(135 / 230, 4),
+                "patrimonio_neto": 135.0, "descuadre_balance": 0.0}
+    for clave, valor in esperado.items():
+        if r[clave] != valor:
+            print(f"  [FALLO] {clave} = {r[clave]}, esperaba {valor}"); ok = False
+    print("  [OK] controles de clasificacion, ratios a mano y division por cero." if ok
+          else "  [FALLO] controles.")
     return ok
 
 

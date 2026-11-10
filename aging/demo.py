@@ -54,7 +54,7 @@ def main():
     agg = motor.agregar_aging(items)
     total = round(sum(agg.values()), 2)
     vencido = round(sum(agg[b] for b in ["1-30", "31-60", "61-90", "91-120", ">120"]), 2)
-    print(f"Facturas abiertas sinteticas: {len(items)} · total {total:,.2f}\n")
+    print(f"Facturas abiertas sinteticas: {len(items)}, total {total:,.2f}\n")
     print("Aging por antiguedad:")
     for b in motor.BUCKETS:
         if agg[b]:
