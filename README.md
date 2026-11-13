@@ -26,6 +26,20 @@ contratación o aplazamientos se toman entonces sobre una cifra con error descon
 
 ## Qué hay dentro
 
+```mermaid
+flowchart TD
+    C[42 meses de caja] --> F[forecast<br/>tendencia y estacionalidad]
+    F --> BT[Prueba contra el pasado<br/>cada mes con solo los anteriores]
+    BT --> CMP{Error frente a<br/>dos métodos sencillos}
+    BL[Balance] --> Q{¿Cuadra?}
+    Q -->|Sí| RA[ratios<br/>liquidez, endeudamiento y autonomía]
+    Q -->|No| NR[No publica ratios]
+    FA[Facturas abiertas] --> AG[aging<br/>tramos de antigüedad, DSO y DPO]
+    style CMP fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
+    style NR fill:#ffebee,stroke:#c62828,color:#b71c1c
+```
+
+
 1. `forecast/` separa la serie mensual de caja en tendencia y estacionalidad, prevé los meses siguientes y se
    examina contra el pasado: para cada mes ya conocido, prevé usando solo los meses anteriores, anota el
    error y lo compara con el de dos métodos sencillos.

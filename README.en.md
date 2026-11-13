@@ -26,6 +26,20 @@ payment decisions are then made on a figure with an unknown error.
 
 ## What is inside
 
+```mermaid
+flowchart TD
+    C[42 months of cash] --> F[forecast<br/>trend and seasonality]
+    F --> BT[Test against the past<br/>each month with only the earlier ones]
+    BT --> CMP{Error against<br/>two simple methods}
+    BL[Balance sheet] --> Q{Does it balance?}
+    Q -->|Yes| RA[ratios<br/>liquidity, debt and autonomy]
+    Q -->|No| NR[No ratios published]
+    FA[Open invoices] --> AG[aging<br/>age buckets, DSO and DPO]
+    style CMP fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
+    style NR fill:#ffebee,stroke:#c62828,color:#b71c1c
+```
+
+
 1. `forecast/` splits the monthly cash series into trend and seasonality, forecasts the following months and
    tests itself against the past: for every month already known, it forecasts using only the earlier months,
    records the error and compares it with that of two simple methods.
