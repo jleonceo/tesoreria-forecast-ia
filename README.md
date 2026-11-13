@@ -30,7 +30,7 @@ contratación o aplazamientos se toman entonces sobre una cifra con error descon
 flowchart TD
     C[42 meses de caja] --> F[forecast<br/>tendencia y estacionalidad]
     F --> BT[Prueba contra el pasado<br/>cada mes con solo los anteriores]
-    BT --> CMP{Error frente a<br/>dos métodos sencillos}
+    BT --> CMP[Error frente a<br/>dos métodos sencillos]
     BL[Balance] --> Q{¿Cuadra?}
     Q -->|Sí| RA[ratios<br/>liquidez, endeudamiento y autonomía]
     Q -->|No| NR[No publica ratios]

@@ -30,7 +30,7 @@ payment decisions are then made on a figure with an unknown error.
 flowchart TD
     C[42 months of cash] --> F[forecast<br/>trend and seasonality]
     F --> BT[Test against the past<br/>each month with only the earlier ones]
-    BT --> CMP{Error against<br/>two simple methods}
+    BT --> CMP[Error against<br/>two simple methods]
     BL[Balance sheet] --> Q{Does it balance?}
     Q -->|Yes| RA[ratios<br/>liquidity, debt and autonomy]
     Q -->|No| NR[No ratios published]
